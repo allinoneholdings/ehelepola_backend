@@ -1,34 +1,40 @@
-const { DataTypes } = require('sequelize');
+//models/reservation.js
+const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) =>
-  sequelize.define('Reservations', {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
+  sequelize.define(
+    "Reservations",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      date: { type: DataTypes.DATEONLY, allowNull: false },
+      time_slot_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: { model: "time_slots", key: "id" },
+        onDelete: "CASCADE",
+      },
+      student_count: { type: DataTypes.INTEGER, allowNull: false },
+      staff_count: { type: DataTypes.INTEGER, allowNull: false },
+      school_name: { type: DataTypes.STRING, allowNull: false },
+      contact_person: { type: DataTypes.STRING, allowNull: false },
+      contact_number: { type: DataTypes.STRING, allowNull: false },
+      email_address: { type: DataTypes.STRING, allowNull: false },
+      amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+      // transaction_id: { type: DataTypes.STRING(255) },
+      // paid_at: { type: DataTypes.DATE },
+      status: {
+        type: DataTypes.ENUM("pending", "confirmed", "visited"),
+        defaultValue: "pending",
+      },
     },
-    school_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: { model: 'schools', key: 'id' },
-      onDelete: 'CASCADE',
-    },
-    date: { type: DataTypes.DATEONLY, allowNull: false },
-    time_slot_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: { model: 'time_slots', key: 'id' },
-      onDelete: 'CASCADE',
-    },
-    student_count: { type: DataTypes.INTEGER, allowNull: false },
-    staff_count: { type: DataTypes.INTEGER, allowNull: false },
-    status: {
-      type: DataTypes.ENUM('pending', 'confirmed', 'cancelled'),
-      defaultValue: 'pending',
-    },
-  }, {
-    tableName: 'reservations',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  });
+    {
+      tableName: "reservations",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
