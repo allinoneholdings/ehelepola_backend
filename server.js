@@ -3,10 +3,12 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./config/db");
 require("dotenv").config();
-
+const bodyParser = require("body-parser");
+const authRoutes = require("./routes/authRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const app = express();
+
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
@@ -24,6 +26,7 @@ app.get("/staff", (req, res) => {
 app.use(express.json());
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/auth", authRoutes);
 
 const PORT = 5000;
 

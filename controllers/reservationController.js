@@ -65,7 +65,6 @@ const createReservation = async (req, res) => {
   } = req.body;
 
   try {
-    // 1. Validate input
     if (
       !date ||
       !timeSlotId ||
@@ -79,17 +78,19 @@ const createReservation = async (req, res) => {
       return res.status(400).json({ message: "All fields required" });
     }
 
-    // 2. Check if timeslot exists
     const slot = await TimeSlots.findByPk(timeSlotId);
     if (!slot) {
       return res.status(404).json({ message: "Time slot not found" });
     }
 
-    // 3. Check capacity
+  
     const reservedResult = await Reservations.findOne({
       attributes: [
         [sequelize.fn("SUM", sequelize.col("student_count")), "reservedCount"],
-        [sequelize.fn("SUM", sequelize.col("staff_count")), "reservedStaffCount"],
+        [
+          sequelize.fn("SUM", sequelize.col("staff_count")),
+          "reservedStaffCount",
+        ],
       ],
       where: {
         date,
@@ -108,7 +109,7 @@ const createReservation = async (req, res) => {
       return res.status(400).json({ message: "Not enough available spots" });
     }
 
-    const PRICE_PER_PERSON = 100; 
+    const PRICE_PER_PERSON = 100;
     const amount = reservedStudents * PRICE_PER_PERSON;
 
     const reservation = await Reservations.create({
@@ -128,6 +129,71 @@ const createReservation = async (req, res) => {
   } catch (error) {
     console.error("Error creating reservation:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const updateReservationStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    if (!id) {
+      return res.status(400).json({ message: "Reservation ID is required" });
+    }
+
+    if (!status || !["visited", "cancelled"].includes(status.toLowerCase())) {
+      return res.status(400).json({
+        message:
+          "Status is required and must be either 'visited' or 'cancelled'",
+      });
+    }
+
+    const reservation = await Reservations.findByPk(id);
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+
+    reservation.status = status.toLowerCase();
+    await reservation.save();
+
+    res.json({
+      message: "Reservation status updated successfully",
+      reservation,
+    });
+  } catch (error) {
+    console.error("Error updating reservation status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getAllReservations = async (req, res) => {
+  try {
+    const reservations = await Reservations.findAll({
+      include: [
+        {
+          model: TimeSlots,
+          attributes: ["name", "start_time", "end_time"],
+        },
+      ],
+    });
+
+    res.json(
+      reservations.map((r) => ({
+        reservationId: r.id,
+        schoolName: r.school_name,
+        contactPerson: r.contact_person,
+        contactNumber: r.contact_number,
+        emailAddress: r.email_address,
+        studentCount: r.student_count,
+        staffCount: r.staff_count,
+        date: r.date,
+        timeSlot: `${r.TimeSlot.start_time} - ${r.TimeSlot.end_time}`,
+        status: r.status,
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching reservations:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -170,7 +236,44 @@ const getReservation = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+const getTodayReservations = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
+    const reservations = await Reservations.findAll({
+      where: { date: today },
+      include: [
+        {
+          model: TimeSlots,
+          attributes: ["name", "start_time", "end_time"],
+        },
+      ],
+    });
 
-
-module.exports = { getTimeSlotsAvailability, createReservation,getReservation };
+    res.json(
+      reservations.map((r) => ({
+        reservationId: r.id,
+        schoolName: r.school_name,
+        contactPerson: r.contact_person,
+        contactNumber: r.contact_number,
+        emailAddress: r.email_address,
+        studentCount: r.student_count,
+        staffCount: r.staff_count,
+        date: r.date,
+        timeSlot: `${r.TimeSlot.start_time} - ${r.TimeSlot.end_time}`,
+        status: r.status,
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching today's reservations:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+module.exports = {
+  getTimeSlotsAvailability,
+  createReservation,
+  getReservation,
+  getAllReservations,
+  updateReservationStatus,
+  getTodayReservations,
+};
