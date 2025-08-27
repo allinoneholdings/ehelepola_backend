@@ -24,8 +24,6 @@ module.exports = (sequelize) =>
       contact_number: { type: DataTypes.STRING, allowNull: false },
       email_address: { type: DataTypes.STRING, allowNull: false },
       amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-      // transaction_id: { type: DataTypes.STRING(255) },
-      // paid_at: { type: DataTypes.DATE },
       status: {
         type: DataTypes.ENUM("pending", "confirmed", "visited", "cancelled"),
         defaultValue: "pending",

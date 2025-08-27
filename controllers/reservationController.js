@@ -83,7 +83,6 @@ const createReservation = async (req, res) => {
       return res.status(404).json({ message: "Time slot not found" });
     }
 
-  
     const reservedResult = await Reservations.findOne({
       attributes: [
         [sequelize.fn("SUM", sequelize.col("student_count")), "reservedCount"],
@@ -110,7 +109,8 @@ const createReservation = async (req, res) => {
     }
 
     const PRICE_PER_PERSON = 100;
-    const amount = reservedStudents * PRICE_PER_PERSON;
+    const amount = Number(studentCount) * PRICE_PER_PERSON;
+
 
     const reservation = await Reservations.create({
       date,
