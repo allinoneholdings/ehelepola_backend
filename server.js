@@ -7,10 +7,11 @@ const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
-// const webhookRoutes = require ("./routes/webhookRoutes");
+const paymentController = require("./controllers/paymentController");
+
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
 // Test database
@@ -28,8 +29,12 @@ app.use(express.json());
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
-// app.use("/api/stripe",webhookRoutes);
-// app.use("/api/payments", paymentRoutes);
+
+app.post(
+  "/api/payments/webhook",
+  bodyParser.raw({ type: "application/json" }), // raw for Stripe
+  paymentController.stripeWebhook
+);
 
 const PORT = 5000;
 

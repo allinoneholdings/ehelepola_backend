@@ -236,6 +236,7 @@ const getReservation = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 const getTodayReservations = async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -269,6 +270,7 @@ const getTodayReservations = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 module.exports = {
   getTimeSlotsAvailability,
   createReservation,
