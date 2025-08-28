@@ -1,4 +1,4 @@
-// reservationController.js
+//controllers/reservationController.js
 const { TimeSlots, Reservations, sequelize } = require("../models");
 async function getTimeSlotsAvailability(req, res) {
   const { date } = req.query;

@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+// const webhookRoutes = require ("./routes/webhookRoutes");
 const app = express();
 
 app.use(cors({ origin: "http://localhost:5173" }));
@@ -27,6 +28,8 @@ app.use(express.json());
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
+// app.use("/api/stripe",webhookRoutes);
+// app.use("/api/payments", paymentRoutes);
 
 const PORT = 5000;
 

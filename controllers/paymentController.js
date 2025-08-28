@@ -1,55 +1,88 @@
+//controllers/paymentController.js
 const Stripe = require("stripe");
 const { Reservations } = require("../models");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Create Checkout Session
+
+//Chechout function
+// const createCheckoutSession = async (req, res) => {
+//   try {
+//     const { reservationId } = req.body;
+
+//     const reservation = await Reservations.findByPk(reservationId);
+//     if (!reservation) {
+//       return res.status(404).json({ error: "Reservation not found" });
+//     }
+
+//     const totalPeople = Number(reservation.student_count);
+//     const unitPrice = 100 * 100;
+//     const totalAmount = totalPeople * unitPrice;
+
+//     reservation.amount = totalAmount;
+//     await reservation.save();
+
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ["card"],
+//       mode: "payment",
+//       customer_email: reservation.email_address,
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: "usd",
+//             product_data: {
+//               name: `Reservation for ${reservation.school_name}`,
+//             },
+//             unit_amount: unitPrice,
+//           },
+//           quantity: totalPeople,
+//         },
+//       ],
+//       success_url: "http://localhost:5173/success",
+//       cancel_url: "http://localhost:5173/cancel",
+//       metadata: {
+//         reservationId: reservation.id,
+//       },
+//     });
+
+//     res.json({ sessionUrl: session.url });
+//   } catch (error) {
+//     console.error("Stripe session error:", error);
+//     res.status(500).json({ error: "Failed to create checkout session" });
+//   }
+// };
+
 const createCheckoutSession = async (req, res) => {
-  try {
-    const { reservationId } = req.body;
+  const { reservationId } = req.body;
 
-    // Fetch reservation from DB
-    const reservation = await Reservations.findByPk(reservationId);
-    if (!reservation) {
-      return res.status(404).json({ error: "Reservation not found" });
-    }
+  const reservation = await Reservations.findByPk(reservationId);
+  if (!reservation)
+    return res.status(404).json({ error: "Reservation not found" });
 
-    // Calculate amount dynamically (example: $10 per person)
-    const totalPeople =
-      Number(reservation.student_count) + Number(reservation.staff_count);
-    const amount = totalPeople * 10 * 100; // Stripe uses cents
+  const unitPrice = 100 * 100; 
+  const totalAmount = reservation.student_count * unitPrice;
+  reservation.amount = totalAmount/100;
+  await reservation.save();
 
-    // Save amount in DB (optional)
-    reservation.amount = amount / 100;
-    await reservation.save();
-
-    // Create Stripe Checkout session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Reservation for ${reservation.school_name}`,
-            },
-            unit_amount: 1000, // $10 per person
-          },
-          quantity: totalPeople,
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    customer_email: reservation.email_address,
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: { name: `Reservation for ${reservation.school_name}` },
+          unit_amount: unitPrice,
         },
-      ],
-      success_url: "http://localhost:5173/success",
-      cancel_url: "http://localhost:5173/cancel",
-      metadata: {
-        reservationId: reservation.id,
+        quantity: reservation.student_count,
       },
-    });
+    ],
+    success_url: "http://localhost:5173/success",
+    cancel_url: "http://localhost:5173/cancel",
+    metadata: { reservationId: reservation.id },
+  });
 
-    res.json({ sessionUrl: session.url });
-  } catch (error) {
-    console.error("Stripe session error:", error);
-    res.status(500).json({ error: "Failed to create checkout session" });
-  }
+  res.json({ sessionUrl: session.url });
 };
 
 const stripeWebhook = async (req, res) => {
@@ -60,7 +93,9 @@ const stripeWebhook = async (req, res) => {
       const session = event.data.object;
 
       // Get the reservation
-      const reservation = await Reservations.findByPk(session.metadata.reservationId);
+      const reservation = await Reservations.findByPk(
+        session.metadata.reservationId
+      );
 
       if (reservation) {
         // Send confirmation email
@@ -85,4 +120,5 @@ const stripeWebhook = async (req, res) => {
 
   res.status(200).end();
 };
-module.exports = { createCheckoutSession,stripeWebhook };
+
+module.exports = { createCheckoutSession, stripeWebhook };
