@@ -6,7 +6,6 @@ const router = express.Router();
 
 // router.post("/register", register);
 router.post("/login", login);
-// router.get("/staff", getUsers);
-router.post("/register", authMiddleware, register); // ✅ protected
+router.post("/register", authMiddleware, register); 
 router.get("/staff", getUsers);  
 module.exports = router;

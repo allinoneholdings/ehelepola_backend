@@ -2,10 +2,12 @@
 const Stripe = require("stripe");
 const { Reservations } = require("../models");
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const { sendReservationEmail } = require("../utils/mail");
+const {
+  sendUserReservationEmail,
+  sendAdminReservationEmail,
+} = require("../utils/mail");
 
 //Chechout function
-
 const createCheckoutSession = async (req, res) => {
   const { reservationId } = req.body;
 
@@ -42,50 +44,52 @@ const createCheckoutSession = async (req, res) => {
 
 
 const stripeWebhook = async (req, res) => {
-  const event = req.body;
+  try {
+    const event = req.body;
 
-  switch (event.type) {
-    case "checkout.session.completed":
-      const session = event.data.object;
+    switch (event.type) {
+      case "checkout.session.completed":
+        const session = event.data.object;
 
-      const reservation = await Reservations.findByPk(
-        session.metadata.reservationId
-      );
-
-      if (reservation) {
-        const reservationData = {
-          reservationId: reservation.id,
-          schoolName: reservation.school_name,
-          contactPerson: reservation.contact_person,
-          contactNumber: reservation.contact_number,
-          emailAddress: reservation.email_address,
-          studentCount: reservation.student_count,
-          staffCount: reservation.staff_count,
-          date: reservation.date,
-          timeSlot: reservation.time_slot_id,
-          amount: reservation.amount,
-        };
-
-        // Send to user
-        await sendReservationEmail(
-          reservation.email_address,
-          "Your Reservation is Confirmed 🎉",
-          reservationData
+        const reservation = await Reservations.findByPk(
+          session.metadata.reservationId
         );
 
-        // Send to admin
-        await sendReservationEmail(
-          process.env.ADMIN_EMAIL,
-          "New Reservation Made",
-          reservationData
-        );
-      }
-      break;
+        if (reservation) {
+          const reservationData = {
+            reservationId: reservation.id,
+            schoolName: reservation.school_name,
+            contactPerson: reservation.contact_person,
+            contactNumber: reservation.contact_number,
+            emailAddress: reservation.email_address,
+            studentCount: reservation.student_count,
+            staffCount: reservation.staff_count,
+            date: reservation.date,
+            timeSlot: reservation.time_slot_id,
+            amount: reservation.amount,
+          };
 
-    default:
-      console.log(`Unhandled event type ${event.type}`);
+          await sendUserReservationEmail(
+            reservation.email_address,
+            reservationData
+          );
+
+          await sendAdminReservationEmail(
+            process.env.ADMIN_EMAIL,
+            reservationData
+          );
+        }
+        break;
+
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.status(200).end();
+  } catch (error) {
+    console.error("Error handling Stripe webhook:", error);
+    res.status(500).send("Webhook error");
   }
-  res.status(200).end();
 };
 
 module.exports = { createCheckoutSession, stripeWebhook };
