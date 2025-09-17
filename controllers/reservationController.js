@@ -122,7 +122,7 @@ const createReservation = async (req, res) => {
       contact_number: contactNumber,
       email_address: emailAddress,
       amount,
-      status: "confirmed",
+      status: "pending",
     });
 
     res.status(201).json({ message: "Reservation successful", reservation });

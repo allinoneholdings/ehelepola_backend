@@ -12,7 +12,7 @@ const paymentController = require("./controllers/paymentController");
 const app = express();
 
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
-app.use(express.json());
+
 
 // Test database
 app.get("/staff", (req, res) => {
@@ -25,16 +25,18 @@ app.get("/staff", (req, res) => {
   });
 });
 
+app.post(
+  "/api/payments/webhook",
+  bodyParser.raw({ type: "application/json" }),
+  paymentController.stripeWebhook
+);
+
 app.use(express.json());
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 
-app.post(
-  "/api/payments/webhook",
-  bodyParser.raw({ type: "application/json" }), // raw for Stripe
-  paymentController.stripeWebhook
-);
+
 
 const PORT = 5000;
 
